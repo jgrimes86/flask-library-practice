@@ -24,8 +24,12 @@ class Book(db.Model, SerializerMixin):
     number_of_pages = db.Column(db.Integer)
 
     # add relationship
+    loans = db.relationship('Loan', back_populates='book', cascade='all, delete-orphan')
+
+    members = association_proxy('loans', 'member')
 
     # add serialization rules
+    serialize_rules=('-loans.book',)
 
     def __repr__(self):
         return f'<Book {self.id} {self.title} {self.author} {self.number_or_pages}>'
@@ -39,8 +43,12 @@ class Member(db.Model, SerializerMixin):
     year_joined = db.Column(db.String)
 
     # add relationship
-    
+    loans = db.relationship('Loan', back_populates='member', cascade='all, delete-orphan')
+
+    books = association_proxy('loans', 'book')
+
     # add serialization rules
+    serialize_rules=('-loans.member')
 
     def __repr__(self):
         return f'<Member {self.id} {self.name} {self.year_joined}>'
@@ -53,9 +61,15 @@ class Loan(db.Model, SerializerMixin):
     check_out_date = db.Column(db.DateTime, server_default=db.func.now())
     due_date = db.Column(db.DateTime, default=next_week)
 
+    member_id = db.Column(db.Integer, db.ForeignKey('members.id'))
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
+
     # add relationship
+    book = db.relationship('Book', back_populates='loans')
+    member = db.relationship('Member', back_populates='loans')
 
     # add serialization rules
+    serialize_rules=('-book.loans', '-member.loans')
 
     def __repr__(self):
         return f'<Loan {self.id} {self.check_out_date} {self.due_date}>'
