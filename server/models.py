@@ -32,7 +32,7 @@ class Book(db.Model, SerializerMixin):
     serialize_rules=('-loans.book',)
 
     def __repr__(self):
-        return f'<Book {self.id} {self.title} {self.author} {self.number_or_pages}>'
+        return f'<Book {self.id} {self.title} {self.author} {self.number_of_pages}>'
 
 
 class Member(db.Model, SerializerMixin):
@@ -48,7 +48,7 @@ class Member(db.Model, SerializerMixin):
     books = association_proxy('loans', 'book')
 
     # add serialization rules
-    serialize_rules=('-loans.member')
+    serialize_rules=('-loans.member',)
 
     def __repr__(self):
         return f'<Member {self.id} {self.name} {self.year_joined}>'
@@ -70,6 +70,17 @@ class Loan(db.Model, SerializerMixin):
 
     # add serialization rules
     serialize_rules=('-book.loans', '-member.loans')
+
+
+    # QUESTION:
+    # Validate number_of_pages here instead of in Loan?
+    @validates('book_id')
+    def validate_pages(self, key, book_id):
+        book = Book.query.filter_by(id=book_id).first()
+        if book.number_of_pages < 1:
+            raise ValueError("Book must have one or more pages.")
+        else:
+            return book
 
     def __repr__(self):
         return f'<Loan {self.id} {self.check_out_date} {self.due_date}>'
